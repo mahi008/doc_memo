@@ -1,0 +1,27 @@
+services:
+  web:
+      build:
+        context: ./app
+      ports:
+        - "5000:5000"
+      volumes:
+        - ./app:/code
+      restart: on-failure
+      depends_on:
+        - mongodb_container
+  mongodb_container:
+    image: mongo
+    container_name: mongodb_container
+    command: mongod --auth
+    environment:
+      - MONGO_INITDB_DATABASE=doc_memo
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=root
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongodbdata:/data/mongodb
+
+volumes:
+  mongodbdata:
+    driver: local

@@ -1,0 +1,82 @@
+# ======= #
+# Editors #
+# ======= #
+*~
+*.swp
+.project
+.classpath
+.settings
+.metadata
+.idea
+.vscode
+.vs
+
+# ====== #
+# Python #
+# ====== #
+__pycache__/
+.pytest_cache/
+*.py[cod]
+
+# ======================== #
+# Personal/Project choices #
+# ======================== #
+*.log
+.coverage
+coverage/
+cover/
+htmlcov/
+.cache
+media/
+
+# ============ #
+# System Files #
+# ============ #
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ====== #
+# Celery # Strangely enough it's not very healthy
+# ====== #
+celerybeat-schedule
+celerybeat.pid
+celeryd.pid
+.ipynb_checkpoints/
+
+
+
+# ====== #
+# Feont end items
+# ====== #
+
+node_modules
+/dist
+
+
+# local env files
+.env.local
+.env.*.local
+/vev
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor directories and files
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Ignore local settings
+app/settings/local.py
+.env
+*venv*
