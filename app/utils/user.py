@@ -13,7 +13,8 @@ class UserManager:
         self.collection = self.db_conn[f"{collection_name}s_collection"]
 
     def fetch_one(self, filter: dict) -> tuple[bool, dict]:
-        tt = self.collection.find_one(filter)
+        tt = self.collection.find_one(filter, {"_id": 0})
+        print("tt ============>", tt, flush=True)
         return tt is not None, tt
 
     def fetch(self, filter):

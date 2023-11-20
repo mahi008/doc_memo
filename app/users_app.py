@@ -1,6 +1,4 @@
-from typing import Optional, Union
-
-from fastapi import FastAPI, Request, Depends, status, HTTPException
+from fastapi import FastAPI, Request, status, HTTPException
 import pymongo
 from pydantic import ValidationError
 
@@ -14,14 +12,8 @@ DB_SESSION = get_db()
 
 
 @app.get("/")
-def read_root():
-    client = pymongo.MongoClient(
-        "mongodb://admin:root@mongodb_container:27017/?authSource=admin"
-    )
-    db = client.user
-    users_collection = db.users_collection
-    users_collection.insert_one({"username": "toto", "password": "tata"})
-    return {"Hello": "World"}
+def home_sweet_home():
+    return {"Users": "1"}
 
 
 @app.post("/user")
@@ -53,17 +45,16 @@ async def create_user(data: Request):
         return error.errors()
 
 
-@app.get("/patients")
-def get_patients_count(mem_score_gt: int = 0, age_lt: int = 150, age_gt: int = 0):
+@app.get("/patient")
+def get_patients_count(mem_score_gt: int = 0, age_gt: int = 0, age_lt: int = 150):
     user_manager = UserManager(db_conn=DB_SESSION, collection_name="patient")
-    s = user_manager.collection.find(
+    s = user_manager.collection.count_documents(
         {
             "memory_score": {"$gt": mem_score_gt},
-            "$or": [{"age": {"$gt": age_gt}}, {"age": {"$lt": age_lt}}],
-        }
+            "$and": [{"age": {"$gt": age_gt}}, {"age": {"$lt": age_lt}}],
+        },
     )
-    for i in s:
-        print(i)
+    return {"count": s}
 
 
 @app.post("/login", status_code=200)

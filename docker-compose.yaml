@@ -1,9 +1,10 @@
 services:
-  web:
+  users_app:
       build:
         context: ./app
       ports:
         - "5000:5000"
+      command: uvicorn users_app:app --reload --host 0.0.0.0 --port 5000
       environment:
           - DB_HOST=mongodb_container
           - DB_NAME=doc_memo
@@ -15,6 +16,25 @@ services:
       restart: on-failure
       depends_on:
         - mongodb_container
+
+  prediction_app:
+    build:
+      context: ./app
+    ports:
+      - "8000:8000"
+    command: uvicorn prediction_app:app --reload --host 0.0.0.0 --port 8000
+    environment:
+      - DB_HOST=mongodb_container
+      - DB_NAME=doc_memo
+      - DB_USER=admin
+      - DB_PASSWORD=root
+      - DB_PORT=27017
+    volumes:
+      - ./app:/code
+    restart: on-failure
+    depends_on:
+      - mongodb_container
+
   mongodb_container:
     image: mongo
     container_name: mongodb_container
