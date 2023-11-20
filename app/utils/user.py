@@ -12,13 +12,12 @@ class UserManager:
         self.db_conn = db_conn
         self.collection = self.db_conn[f"{collection_name}s_collection"]
 
-    def fetch_one(self, filter: dict) -> tuple[bool, dict]:
-        tt = self.collection.find_one(filter, {"_id": 0})
-        print("tt ============>", tt, flush=True)
+    def fetch_one(self, filters: dict) -> tuple[bool, dict]:
+        tt = self.collection.find_one(filters, {"_id": 0})
         return tt is not None, tt
 
-    def fetch(self, filter):
-        return self.collection.find()
+    def fetch_all(self, filters):
+        return self.collection.find(filters)
 
     def filter(self, filter):
         pass
@@ -32,4 +31,5 @@ class UserManager:
     def __hash_password(passwd: str) -> str:
         return PasswordHelper.get_password_hash(passwd)
 
-    pass
+    def retrieve_schema(self) -> dict:
+        pass

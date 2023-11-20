@@ -4,5 +4,5 @@ router = APIRouter()
 
 
 @router.get("/")
-async def list_all():
+async def create_user():
     return {"Hello": "World"}
