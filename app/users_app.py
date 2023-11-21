@@ -1,9 +1,8 @@
 from fastapi import FastAPI, Request, status, HTTPException
-import pymongo
 from pydantic import ValidationError
 
 from utils.db import get_db
-from models import User, Patient, CareGiver, Professional, LoginInput
+from models import LoginInput
 from utils.password_helper import PasswordHelper
 from utils.user import UserManager
 
@@ -20,22 +19,13 @@ def home_sweet_home():
 async def create_user(data: Request):
     user = await data.json()
     user_type = user.get("status")
-    user_model_schema = User
-
-    if user_type == "patient":
-        user_model_schema = Patient
-    if user_type == "caregiver":
-        user_model_schema = CareGiver
-    if user_type == "healthcare_professional":
-        user_model_schema = Professional
+    user_manager = UserManager(db_conn=DB_SESSION, collection_name=user_type)
+    user_model_schema = user_manager.retrieve_user_schema()
 
     try:
         user_model = user_model_schema(**user)
-        user_manager = UserManager(
-            db_conn=DB_SESSION, collection_name=user_model.status
-        )
-        exist, _ = user_manager.fetch_one(
-            filter={"name": user_model.name, "status": user_model.status}
+        exist, _ = user_manager.get_one(
+            filters={"name": user_model.name, "status": user_model.status}
         )
         if exist:
             return "User already exist"
@@ -47,20 +37,19 @@ async def create_user(data: Request):
 
 @app.get("/patient")
 def get_patients_count(mem_score_gt: int = 0, age_gt: int = 0, age_lt: int = 150):
-    user_manager = UserManager(db_conn=DB_SESSION, collection_name="patient")
-    s = user_manager.collection.count_documents(
-        {
-            "memory_score": {"$gt": mem_score_gt},
-            "$and": [{"age": {"$gt": age_gt}}, {"age": {"$lt": age_lt}}],
-        },
-    )
-    return {"count": s}
+    user_manager = UserManager(DB_SESSION, collection_name="patient")
+    count_query = {
+        "memory_score": {"$gt": mem_score_gt},
+        "age": {"$gt": age_gt, "$lt": age_lt},
+    }
+    count = user_manager.collection.count_documents(count_query)
+    return {"count": count}
 
 
 @app.post("/login", status_code=200)
 def login(login_data: LoginInput):
     user_manager = UserManager(db_conn=DB_SESSION, collection_name=login_data.status)
-    _, user = user_manager.fetch_one({"name": login_data.user_name})
+    _, user = user_manager.get_one(filters={"name": login_data.user_name})
     verify_password = PasswordHelper.verify_password(
         login_data.password, user.get("password")
     )
