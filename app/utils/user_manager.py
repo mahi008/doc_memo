@@ -10,6 +10,10 @@ logger = logging.getLogger(__name__)
 
 
 class UserManager:
+    """
+    Class for managing user-related operations.
+    """
+
     collection = None
     db_conn = None
 
@@ -54,7 +58,9 @@ class UserManager:
         """
         result = None
         try:
-            user_data.password = self.__hash_password(passwd=user_data.password)
+            user_data.password = PasswordHelper.get_password_hash(
+                password=user_data.password
+            )
             self.collection.insert_one(user_data.dict())
             result = user_data.dict(exclude={"password"})
         except (PyMongoError, Exception) as save_err:
@@ -76,7 +82,3 @@ class UserManager:
             "healthcare_professional": Professional,
         }
         return user_model_schemas.get(self.collection_name, User)
-
-    @staticmethod
-    def __hash_password(passwd: str) -> str:
-        return PasswordHelper.get_password_hash(passwd)

@@ -7,7 +7,7 @@ from starlette.responses import JSONResponse
 from utils.db import get_db
 from models import LoginInput
 from utils.password_helper import PasswordHelper
-from utils.user import UserManager
+from utils.user_manager import UserManager
 
 users_service = FastAPI(
     title="Users microservice",
