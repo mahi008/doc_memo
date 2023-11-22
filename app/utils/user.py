@@ -4,6 +4,9 @@ from gridfs import GridOutCursor
 from models import User, Patient, CareGiver, Professional
 from pymongo.errors import PyMongoError
 from utils.password_helper import PasswordHelper
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class UserManager:
@@ -12,22 +15,29 @@ class UserManager:
 
     def __init__(self, db_conn, collection_name):
         self.db_conn = db_conn
+        self.collection_name = collection_name
         self.collection = self.db_conn[f"{collection_name}s_collection"]
 
     def get_one(self, filters: dict) -> tuple[bool, dict]:
         """
-        Retrieve one record
-        :param filters:
-        :return: user dict
+        Retrieve a single record from the collection based on the given filters.
+        Args:
+            filters (dict): A dictionary specifying the filters to apply.
+        Returns:
+            tuple[bool, dict]: A tuple containing a boolean value indicating whether
+            a record exists and the record itself, if it exists.
         """
-        current_record = self.collection.find_one(filters, {"_id": 0})
-        return current_record is not None, current_record
+        record = self.collection.find_one(filters, {"_id": 0})
+        record_exists = record is not None
+        return record_exists, record
 
     def get_all(self, filters: dict) -> GridOutCursor:
         """
-        Retrieve all records
-        :param filters:
-        :return:
+        Retrieve all records from the collection based on the given filters.
+        Args:
+            filters (dict): A dictionary specifying the filters to apply.
+        Returns:
+            GridOutCursor: A cursor object containing all retrieved records.
         """
         return self.collection.find(filters)
 
@@ -35,9 +45,12 @@ class UserManager:
         self, user_data: Union[Patient, CareGiver, Professional]
     ) -> Union[None | dict]:
         """
-        Save user
-        :param user_data:
-        :return:
+        Save user data to the collection.
+        Args:
+            user_data: An instance of either Patient, CareGiver, or Professional class.
+        Returns:
+            dict: The dictionary representation of the saved user data, excluding the password field.
+            None: If an error occurred during the save operation.
         """
         result = None
         try:
@@ -45,31 +58,25 @@ class UserManager:
             self.collection.insert_one(user_data.dict())
             result = user_data.dict(exclude={"password"})
         except (PyMongoError, Exception) as save_err:
-            pass  # TODO: log here
+            logger.error("Error saving user data: %s", save_err)
 
         return result
 
-    @staticmethod
-    def __hash_password(passwd: str) -> str:
-        """
-        Has password using passlib
-        :param passwd:
-        :return:
-        """
-        return PasswordHelper.get_password_hash(passwd)
-
     def retrieve_user_schema(self) -> Union[User, Patient, CareGiver, Professional]:
         """
-        Retrieve pydantic schema for current user type
-        :param status:
-        :return:
+        Retrieve the user schema based on the collection name.
+        Args:
+            self.collection_name (str): The name of the collection.
+        Returns:
+            Union[User, Patient, CareGiver, Professional]: The user schema based on the collection name.
         """
-        user_model_schema = User
-        if self.collection == "patient":
-            user_model_schema = Patient
-        if self.collection == "caregiver":
-            user_model_schema = CareGiver
-        if self.collection == "healthcare_professional":
-            user_model_schema = Professional
+        user_model_schemas = {
+            "patient": Patient,
+            "caregiver": CareGiver,
+            "healthcare_professional": Professional,
+        }
+        return user_model_schemas.get(self.collection_name, User)
 
-        return user_model_schema
+    @staticmethod
+    def __hash_password(passwd: str) -> str:
+        return PasswordHelper.get_password_hash(passwd)

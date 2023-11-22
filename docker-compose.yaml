@@ -4,7 +4,7 @@ services:
         context: ./app
       ports:
         - "5000:5000"
-      command: uvicorn users_app:app --reload --host 0.0.0.0 --port 5000
+      command: uvicorn users_app:users_service --reload --host 0.0.0.0 --port 5000
       environment:
           - DB_HOST=mongodb_container
           - DB_NAME=doc_memo
