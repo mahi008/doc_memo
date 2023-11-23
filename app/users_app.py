@@ -1,5 +1,4 @@
-from typing import Union, Dict, List, Tuple, Any
-
+from typing import Union, Dict, List
 from fastapi import FastAPI, Request, status, HTTPException
 from pydantic import ValidationError
 from starlette.responses import JSONResponse
@@ -8,6 +7,7 @@ from utils.db import get_db
 from models import LoginInput
 from utils.password_helper import PasswordHelper
 from utils.user_manager import UserManager
+import httpx
 
 users_service = FastAPI(
     title="Users microservice",
@@ -78,6 +78,31 @@ def get_patients_count(
     }
     count = user_manager.collection.count_documents(count_query)
     return {"count": count}
+
+
+@users_service.get("/patient/{username}/score")
+def get_prediction_score(username: str) -> dict:
+    """
+    Get the prediction score for a patient.
+    Args:
+        username (str): The username of the patient.
+    Returns:
+        dict: The prediction score for the patient.
+    Raises:
+        HTTPException: If the prediction service is not available.
+    """
+    prediction_uri = (
+        f"http://doctor_memo-prediction_app-1:8000/predict_score/{username}"
+    )
+    try:
+        req = httpx.get(prediction_uri)
+        req.raise_for_status()
+    except httpx.RequestError as error:
+        raise HTTPException(
+            status_code=error.response.status_code,
+            detail="Prediction service is not available",
+        )
+    return req.json()
 
 
 @users_service.post("/login", status_code=200)

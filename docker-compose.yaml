@@ -22,7 +22,7 @@ services:
       context: ./app
     ports:
       - "8000:8000"
-    command: uvicorn prediction_app:app --reload --host 0.0.0.0 --port 8000
+    command: uvicorn prediction_app:prediction_service --reload --host 0.0.0.0 --port 8000
     environment:
       - DB_HOST=mongodb_container
       - DB_NAME=doc_memo
