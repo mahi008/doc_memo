@@ -1,7 +1,4 @@
-import re
-
-from fastapi import FastAPI, Request, HTTPException
-from starlette import status
+from fastapi import FastAPI, Request
 from starlette.responses import JSONResponse
 
 from utils.db import get_db
@@ -26,21 +23,36 @@ async def home_sweet_home(request: Request):
 
 @prediction_service.get("/predict_score/{username}")
 def get_prediction_score(username: str):
+    """
+    Get the prediction score for a given username.
+    Args:
+        username (str): The username of the user to get the prediction score for.
+    Returns:
+        dict: A dictionary containing the predicted score.
+            If the user is not found, an error message is returned.
+    """
     user_manager = UserManager(db_conn=DB_SESSION, collection_name="patient")
-    _, user = user_manager.get_one({"name": re.compile(username, re.IGNORECASE)})
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
-        )
+    user_exists, user = user_manager.get_one({"name": username})
+    if not user_exists:
+        return {"error": "User not found"}
     score = predict_score(user)
     return {"predicted_score": score}
 
 
 def predict_score(user: dict) -> int:
+    """
+    Predicts the score based on the user's memory score and age.
+    Args:
+        user (dict): Dictionary containing user information.
+    Returns:
+        int: Predicted score.
+    """
     memory_score = user.get("memory_score")
     age = user.get("age")
-    if age > 50:
-        return memory_score + 5
-    else:
-        return memory_score + 3
+    score = None
+    if age and age > 50:
+        score = memory_score + 5
+    if age and age < 50:
+        score = memory_score + 3
+
+    return score

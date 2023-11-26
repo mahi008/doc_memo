@@ -1,13 +1,14 @@
-from typing import Union, Dict, List
-from fastapi import FastAPI, Request, status, HTTPException
+from typing import Dict, List, Union
+
+import httpx
+from fastapi import FastAPI, HTTPException, Request, status
 from pydantic import ValidationError
 from starlette.responses import JSONResponse
 
+from models.user import LoginInput
 from utils.db import get_db
-from models import LoginInput
 from utils.password_helper import PasswordHelper
 from utils.user_manager import UserManager
-import httpx
 
 users_service = FastAPI(
     title="Users microservice",
@@ -51,9 +52,9 @@ async def create_user(data: Request) -> Union[Dict[str, str], List[Dict[str, str
             return {"error": "User already exists"}
         return user_manager.save(user_data=user_model)
     except ValidationError as validation_err:
-        return validation_err.errors()
+        raise HTTPException(status_code=422, detail=str(validation_err))
     except Exception as other_err:
-        return {"error": str(other_err)}
+        raise HTTPException(status_code=500, detail=str(other_err))
 
 
 @users_service.get("/patient")
@@ -91,18 +92,22 @@ def get_prediction_score(username: str) -> dict:
     Raises:
         HTTPException: If the prediction service is not available.
     """
-    prediction_uri = (
-        f"http://doctor_memo-prediction_app-1:8000/predict_score/{username}"
-    )
+    error_msg = None
+    prediction_uri = f"http://doc_memo-prediction_app-1:8000/predict_score/{username}"
+    result = None
     try:
         req = httpx.get(prediction_uri)
         req.raise_for_status()
-    except httpx.RequestError as error:
-        raise HTTPException(
-            status_code=error.response.status_code,
-            detail="Prediction service is not available",
-        )
-    return req.json()
+        result = req.json()
+    except httpx.HTTPError as http_error:
+        error_msg = http_error
+    except httpx.RequestError as req_error:
+        error_msg = req_error
+
+    if error_msg:
+        return {"error": error_msg}
+
+    return result
 
 
 @users_service.post("/login", status_code=200)
@@ -115,8 +120,10 @@ def login(login_data: LoginInput) -> dict:
         dict: A dictionary indicating the success or failure of the login.
     """
     user_manager = UserManager(db_conn=DB_SESSION, collection_name=login_data.status)
-    _, user = user_manager.get_one(filters={"name": login_data.user_name})
-    if not user or not PasswordHelper.verify_password(
+    user_exist, user = user_manager.get_one(
+        filters={"name": login_data.user_name.lower()}
+    )
+    if (not user_exist and not user) or not PasswordHelper.verify_password(
         login_data.password, user.get("password")
     ):
         raise HTTPException(

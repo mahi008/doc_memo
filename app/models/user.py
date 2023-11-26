@@ -1,9 +1,10 @@
-from pydantic import BaseModel, SecretStr, Extra
-from typing import Literal, Any, Union
+from typing import Literal
+
+from pydantic import BaseModel, constr, Extra
 
 
 class User(BaseModel):
-    name: str
+    name: constr(to_lower=True)
     password: str
     status: Literal["patient", "caregiver", "healthcare_professional"]
 
@@ -22,13 +23,6 @@ class CareGiver(User):
 
 class Professional(User):
     type: Literal["general_practitioner", "neurologist", "psychologist"]
-
-    class Config:
-        extra = Extra.ignore
-
-
-class UserType(BaseModel):
-    user: Union[Patient, CareGiver, Professional]
 
     class Config:
         extra = Extra.ignore

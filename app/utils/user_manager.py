@@ -1,10 +1,11 @@
+import logging
 from typing import Union
 
 from gridfs import GridOutCursor
-from models import User, Patient, CareGiver, Professional
 from pymongo.errors import PyMongoError
+
+from models.user import CareGiver, Patient, Professional, User
 from utils.password_helper import PasswordHelper
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +33,7 @@ class UserManager:
             a record exists and the record itself, if it exists.
         """
         record = self.collection.find_one(filters, {"_id": 0})
+        print("RECC ============>", record, flush=True)
         record_exists = record is not None
         return record_exists, record
 
@@ -68,7 +70,9 @@ class UserManager:
 
         return result
 
-    def retrieve_user_schema(self) -> Union[User, Patient, CareGiver, Professional]:
+    def retrieve_user_schema(
+        self,
+    ) -> type(Union[User, Patient, CareGiver, Professional]):
         """
         Retrieve the user schema based on the collection name.
         Args:
