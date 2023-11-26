@@ -89,6 +89,7 @@ http://localhost:5000/patient/?mem_score_gt=15&age_gt=30
 
 **PARAMS** :
 Patient name/username : `{XXXXXX}=user name`
+
 ---
 
 ### Project setup detail
